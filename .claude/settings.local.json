@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn add dotenv)",
+      "Bash(yarn add:*)",
+      "Bash(yarn migration:generate:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
