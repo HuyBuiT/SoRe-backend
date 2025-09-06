@@ -9,6 +9,7 @@ import swaggerUI from '@fastify/swagger-ui';
 import { config } from './config/database';
 import { authRoutes } from './routes/authRoutes';
 import { socialRoutes } from './routes/socialRoutes';
+import { kolRoutes } from './routes/kolRoutes';
 
 const app = Fastify({
   logger: {
@@ -222,6 +223,7 @@ app.register(session, {
 // Register routes
 app.register(authRoutes, { prefix: '/auth' });
 app.register(socialRoutes, { prefix: '/social' });
+app.register(kolRoutes, { prefix: '/api' });
 
 app.get('/health', {
   schema: {

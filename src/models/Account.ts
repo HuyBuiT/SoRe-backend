@@ -17,6 +17,40 @@ export class Account extends BaseTimestamp {
   @Column('decimal', { precision: 10, scale: 2, name: 'price_per_slot' })
   pricePerSlot: number;
 
+  // Additional KOL fields
+  @Column({ name: 'display_name' })
+  displayName: string;
+
+  @Column({ name: 'avatar_url' })
+  avatarUrl: string;
+
+  @Column({ name: 'reputation', default: 0 })
+  reputation: number;
+
+  @Column({ name: 'level', default: 'Bronze' })
+  level: string;
+
+  @Column({ name: 'completed_sessions', default: 0 })
+  completedSessions: number;
+
+  @Column('decimal', { precision: 3, scale: 2, name: 'rating', default: 0 })
+  rating: number;
+
+  @Column('text', { name: 'expertise', nullable: true })
+  expertise: string; // JSON string array
+
+  @Column({ name: 'available_slots', default: 10 })
+  availableSlots: number;
+
+  @Column('text', { name: 'description', nullable: true })
+  description: string;
+
+  @Column('text', { name: 'tags', nullable: true })
+  tags: string; // JSON string array
+
+  @Column({ name: 'booked_slots', default: 0 })
+  bookedSlots: number;
+
   @OneToOne(() => SocialStat, socialStat => socialStat.account)
   socialStat: SocialStat;
 
