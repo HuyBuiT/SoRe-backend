@@ -8,6 +8,7 @@ import { OnChainStat } from "./models/OnChainStat";
 import { BuyTransaction } from "./models/BuyTransaction";
 import { NFTLevelThreshold } from "./models/NFTLevelThreshold";
 import { PointMechanism } from "./models/PointMechanism";
+import { Booking } from "./models/Booking";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -25,7 +26,8 @@ export const AppDataSource = new DataSource({
     OnChainStat,
     BuyTransaction,
     NFTLevelThreshold,
-    PointMechanism
+    PointMechanism,
+    Booking
   ],
   migrations: ["src/migrations/*.ts"],
   subscribers: ["src/subscribers/*.ts"],

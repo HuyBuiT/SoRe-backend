@@ -5,6 +5,7 @@ import { SocialStat } from './SocialStat';
 import { OnChainStat } from './OnChainStat';
 import { NFT } from './NFT';
 import { BuyTransaction } from './BuyTransaction';
+import { Booking } from './Booking';
 
 @Entity()
 export class Account extends BaseTimestamp {
@@ -51,6 +52,21 @@ export class Account extends BaseTimestamp {
   @Column({ name: 'booked_slots', default: 0 })
   bookedSlots: number;
 
+  @Column({ name: 'is_available', default: true })
+  isAvailable: boolean;
+
+  @Column('text', { name: 'availability_schedule', nullable: true })
+  availabilitySchedule: string; // JSON string with weekly schedule
+
+  @Column({ name: 'min_booking_duration', default: 30 })
+  minBookingDuration: number; // minutes
+
+  @Column({ name: 'max_booking_duration', default: 240 })
+  maxBookingDuration: number; // minutes
+
+  @Column('decimal', { precision: 10, scale: 2, name: 'hourly_rate', nullable: true })
+  hourlyRate: number;
+
   @OneToOne(() => SocialStat, socialStat => socialStat.account)
   socialStat: SocialStat;
 
@@ -65,4 +81,10 @@ export class Account extends BaseTimestamp {
 
   @OneToMany(() => BuyTransaction, buyTransaction => buyTransaction.kolAccount)
   kolTransactions: BuyTransaction[];
+
+  @OneToMany(() => Booking, booking => booking.kol)
+  receivedBookings: Booking[];
+
+  @OneToMany(() => Booking, booking => booking.client)
+  madeBookings: Booking[];
 }
