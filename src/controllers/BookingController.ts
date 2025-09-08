@@ -4,8 +4,8 @@ import { Booking, BookingStatus } from '../models/Booking';
 import { Account } from '../models/Account';
 
 interface CreateBookingRequest {
-  kolId: string;
-  clientId: string;
+  kolId: string;  // Can be database ID or wallet address
+  clientId: string; // Can be database ID or wallet address  
   bookingDate: string;
   startTime: string;
   endTime: string;
@@ -28,12 +28,54 @@ export class BookingController {
     try {
       const { kolId, clientId, bookingDate, startTime, endTime, reason, durationMinutes, timezone = 'UTC' } = request.body;
 
-      // Find KOL and client
-      const kol = await this.accountRepository.findOne({ where: { id: parseInt(kolId) } });
-      const client = await this.accountRepository.findOne({ where: { id: parseInt(clientId) } });
+      // Find KOL (by ID or wallet address)
+      let kol = null;
+      if (/^\d+$/.test(kolId)) {
+        // Only treat as database ID if it's purely numeric (no 0x prefix or letters)
+        kol = await this.accountRepository.findOne({ where: { id: parseInt(kolId) } });
+      } else {
+        kol = await this.accountRepository.findOne({ where: { walletAddress: kolId } });
+      }
 
-      if (!kol || !client) {
-        return reply.status(404).send({ error: 'KOL or client not found' });
+      if (!kol) {
+        return reply.status(404).send({ error: 'KOL not found' });
+      }
+
+      // Find client (by ID or wallet address)
+      let client = null;
+      if (/^\d+$/.test(clientId)) {
+        // Only treat as database ID if it's purely numeric (no 0x prefix or letters)
+        client = await this.accountRepository.findOne({ where: { id: parseInt(clientId) } });
+      } else {
+        // Try to find client by wallet address
+        client = await this.accountRepository.findOne({ where: { walletAddress: clientId } });
+        
+        // If client doesn't exist, create a basic client account
+        if (!client) {
+          const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${clientId}`;
+          client = this.accountRepository.create({
+            walletAddress: clientId,
+            userNameOnX: clientId.substring(0, 10), // Truncated address as username
+            displayName: `Client ${clientId.substring(0, 8)}...`,
+            avatarUrl,
+            pricePerSlot: 0,
+            expertise: JSON.stringify([]),
+            description: 'Client account created automatically',
+            reputation: 0,
+            level: 'Bronze',
+            completedSessions: 0,
+            rating: 0,
+            tags: JSON.stringify([]),
+            bookedSlots: 0,
+            isAvailable: false,
+            availableSlots: 0
+          });
+          client = await this.accountRepository.save(client);
+        }
+      }
+
+      if (!client) {
+        return reply.status(404).send({ error: 'Failed to create or find client' });
       }
 
       if (!kol.isAvailable) {
@@ -62,7 +104,7 @@ export class BookingController {
       // Check for scheduling conflicts
       const existingBooking = await this.bookingRepository.findOne({
         where: {
-          kolId: parseInt(kolId),
+          kolId: kol.id,
           bookingDate: new Date(bookingDate),
           status: BookingStatus.ACCEPTED
         }
@@ -84,8 +126,8 @@ export class BookingController {
 
       // Create booking
       const booking = this.bookingRepository.create({
-        kolId: parseInt(kolId),
-        clientId: parseInt(clientId),
+        kolId: kol.id,
+        clientId: client.id,
         bookingDate: new Date(bookingDate),
         startTime,
         endTime,

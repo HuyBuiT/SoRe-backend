@@ -198,6 +198,8 @@ app.register(cors, {
       cb(new Error('Not allowed by CORS'), false);
     }
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true
 });
 

@@ -10,6 +10,23 @@ interface GetKOLsQuery {
   filter?: string;
 }
 
+interface CreateKOLBody {
+  name: string;
+  username: string;
+  walletAddress: string;
+  pricePerSlot: number;
+  expertise: string[];
+  description: string;
+  bio?: string;
+  socialLinks?: {
+    twitter?: string;
+    discord?: string;
+    telegram?: string;
+  };
+  availableSlots?: number;
+}
+
+
 export class KOLController {
   // Get KOLs with pagination
   static async getKOLs(request: FastifyRequest<{ Querystring: GetKOLsQuery }>, reply: FastifyReply) {
@@ -24,11 +41,20 @@ export class KOLController {
       
       // Build query with optional filtering and sorting
       let queryBuilder = accountRepository.createQueryBuilder('account')
-        .leftJoinAndSelect('account.socialStat', 'socialStat');
+        .leftJoinAndSelect('account.socialStat', 'socialStat')
+        // Only include accounts that are actual KOLs (not auto-created client accounts)
+        // KOLs must have: available slots, pricing set, and proper descriptions
+        .where('account.availableSlots > 0')
+        .andWhere('account.pricePerSlot > 0')
+        .andWhere('account.description NOT LIKE :autoCreated', { 
+          autoCreated: '%Client account created automatically%' 
+        })
+        // Additional filter: only show accounts that are marked as available KOLs
+        .andWhere('account.isAvailable = true');
       
       // Apply filtering by expertise category
       if (filter !== 'all') {
-        queryBuilder = queryBuilder.where('account.expertise ILIKE :filter', { 
+        queryBuilder = queryBuilder.andWhere('account.expertise ILIKE :filter', { 
           filter: `%"${filter}"%` 
         });
       }
@@ -63,7 +89,8 @@ export class KOLController {
           followers: account.socialStat?.follower || 0,
           completedSessions: account.completedSessions,
           rating: parseFloat(account.rating.toString()),
-          expertise: account.expertise ? JSON.parse(account.expertise) : []
+          expertise: account.expertise ? JSON.parse(account.expertise) : [],
+          walletAddress: account.walletAddress
         },
         pricePerSlot: parseFloat(account.pricePerSlot.toString()),
         availableSlots: account.availableSlots,
@@ -89,6 +116,116 @@ export class KOLController {
     } catch (error) {
       const errorMessage = (error as Error)?.message || 'Unknown error';
       console.error('Error fetching KOLs:', errorMessage);
+      reply.status(500).send({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage
+      });
+    }
+  }
+
+  // Create a new KOL
+  static async createKOL(request: FastifyRequest<{ Body: CreateKOLBody }>, reply: FastifyReply) {
+    try {
+      const {
+        name,
+        username,
+        walletAddress,
+        pricePerSlot,
+        expertise,
+        description,
+        bio,
+        socialLinks,
+        availableSlots = 10
+      } = request.body;
+
+      // Validate required fields
+      if (!name || !username || !walletAddress || !pricePerSlot || !expertise || !description) {
+        return reply.status(400).send({
+          success: false,
+          message: 'Missing required fields: name, username, walletAddress, pricePerSlot, expertise, description'
+        });
+      }
+
+      const accountRepository = AppDataSource.getRepository(Account);
+      
+      // Check if account with wallet address already exists
+      const existingAccount = await accountRepository.findOne({
+        where: { walletAddress }
+      });
+
+      if (existingAccount) {
+        return reply.status(409).send({
+          success: false,
+          message: 'KOL with this wallet address already exists'
+        });
+      }
+
+      // Generate avatar URL
+      const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+
+      // Create new account
+      const account = accountRepository.create({
+        walletAddress,
+        userNameOnX: username,
+        displayName: name,
+        avatarUrl,
+        pricePerSlot,
+        expertise: JSON.stringify(expertise),
+        description,
+        availableSlots,
+        reputation: 100, // Starting reputation
+        level: 'Bronze', // Starting level
+        completedSessions: 0,
+        rating: 0,
+        tags: JSON.stringify(expertise.slice(0, 3)), // Use first 3 expertise as tags
+        bookedSlots: 0,
+        isAvailable: true
+      });
+
+      const savedAccount = await accountRepository.save(account);
+
+      // Create initial social stats
+      const socialStatRepository = AppDataSource.getRepository(SocialStat);
+      const socialStat = socialStatRepository.create({
+        accountId: savedAccount.id,
+        follower: 0,
+        totalPost: 0,
+        totalLike: 0
+      });
+      await socialStatRepository.save(socialStat);
+
+      // Format response to match frontend expectations
+      const kolData = {
+        id: savedAccount.id.toString(),
+        kol: {
+          name: savedAccount.displayName,
+          username: savedAccount.userNameOnX,
+          avatar: savedAccount.avatarUrl,
+          reputation: savedAccount.reputation,
+          level: savedAccount.level as 'Bronze' | 'Silver' | 'Gold' | 'Diamond',
+          followers: 0,
+          completedSessions: savedAccount.completedSessions,
+          rating: parseFloat(savedAccount.rating.toString()),
+          expertise: JSON.parse(savedAccount.expertise),
+          walletAddress: savedAccount.walletAddress
+        },
+        pricePerSlot: parseFloat(savedAccount.pricePerSlot.toString()),
+        availableSlots: savedAccount.availableSlots,
+        description: savedAccount.description,
+        tags: JSON.parse(savedAccount.tags || '[]'),
+        bookedSlots: savedAccount.bookedSlots
+      };
+
+      reply.status(201).send({
+        success: true,
+        message: 'KOL created successfully',
+        data: kolData
+      });
+
+    } catch (error) {
+      const errorMessage = (error as Error)?.message || 'Unknown error';
+      console.error('Error creating KOL:', errorMessage);
       reply.status(500).send({
         success: false,
         message: 'Internal server error',
