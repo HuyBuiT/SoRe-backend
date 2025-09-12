@@ -97,7 +97,6 @@ export async function bookingRoutes(fastify: FastifyInstance) {
         type: 'object',
         properties: {
           pricePerSlot: { type: 'number' },
-          hourlyRate: { type: 'number' },
           isAvailable: { type: 'boolean' },
           minBookingDuration: { type: 'number' },
           maxBookingDuration: { type: 'number' },

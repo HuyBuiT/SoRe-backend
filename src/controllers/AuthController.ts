@@ -167,17 +167,35 @@ export class AuthController {
       }
 
       const accountRepository = AppDataSource.getRepository(Account);
-      const account = await accountRepository.findOne({
+      let account = await accountRepository.findOne({
         where: { walletAddress },
         relations: ['socialStat']
       });
 
       if (!account) {
-        return reply.send({ 
-          connected: false,
-          username: null,
-          socialStats: null
-        });
+        // Auto-create basic user account for new wallet connection
+        account = new Account();
+        account.walletAddress = walletAddress;
+        account.userNameOnX = '';
+        account.pricePerSlot = 0;
+        account.displayName = '';
+        account.avatarUrl = '';
+        account.reputation = 0;
+        account.level = 'Bronze';
+        account.completedSessions = 0;
+        account.rating = 0;
+        account.expertise = '';
+        account.availableSlots = 0;
+        account.description = 'Client account created automatically when wallet connected';
+        account.tags = '';
+        account.bookedSlots = 0;
+        account.isAvailable = false; // Not a KOL by default
+        account.availabilitySchedule = '';
+        account.minBookingDuration = 30;
+        account.maxBookingDuration = 240;
+        account = await accountRepository.save(account);
+        
+        request.log.info(`Auto-created account for wallet: ${walletAddress}`);
       }
 
       return reply.send({

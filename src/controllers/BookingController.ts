@@ -95,11 +95,8 @@ export class BookingController {
         });
       }
 
-      // Calculate price based on KOL's pricing
-      let price = kol.pricePerSlot;
-      if (kol.hourlyRate) {
-        price = (kol.hourlyRate * durationMinutes) / 60;
-      }
+      // Calculate price based on KOL's pricing (STT per slot)
+      const price = kol.pricePerSlot;
 
       // Check for scheduling conflicts
       const existingBooking = await this.bookingRepository.findOne({
@@ -252,7 +249,6 @@ export class BookingController {
     Params: { kolId: string }, 
     Body: { 
       pricePerSlot?: number;
-      hourlyRate?: number;
       isAvailable?: boolean;
       minBookingDuration?: number;
       maxBookingDuration?: number;
@@ -271,7 +267,6 @@ export class BookingController {
 
       // Update pricing fields
       if (updates.pricePerSlot !== undefined) kol.pricePerSlot = updates.pricePerSlot;
-      if (updates.hourlyRate !== undefined) kol.hourlyRate = updates.hourlyRate;
       if (updates.isAvailable !== undefined) kol.isAvailable = updates.isAvailable;
       if (updates.minBookingDuration !== undefined) kol.minBookingDuration = updates.minBookingDuration;
       if (updates.maxBookingDuration !== undefined) kol.maxBookingDuration = updates.maxBookingDuration;

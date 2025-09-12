@@ -150,50 +150,77 @@ export class KOLController {
       const accountRepository = AppDataSource.getRepository(Account);
       
       // Check if account with wallet address already exists
-      const existingAccount = await accountRepository.findOne({
+      let existingAccount = await accountRepository.findOne({
         where: { walletAddress }
       });
-
-      if (existingAccount) {
-        return reply.status(409).send({
-          success: false,
-          message: 'KOL with this wallet address already exists'
-        });
-      }
 
       // Generate avatar URL
       const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
 
-      // Create new account
-      const account = accountRepository.create({
-        walletAddress,
-        userNameOnX: username,
-        displayName: name,
-        avatarUrl,
-        pricePerSlot,
-        expertise: JSON.stringify(expertise),
-        description,
-        availableSlots,
-        reputation: 100, // Starting reputation
-        level: 'Bronze', // Starting level
-        completedSessions: 0,
-        rating: 0,
-        tags: JSON.stringify(expertise.slice(0, 3)), // Use first 3 expertise as tags
-        bookedSlots: 0,
-        isAvailable: true
-      });
+      let savedAccount: Account;
 
-      const savedAccount = await accountRepository.save(account);
+      if (existingAccount) {
+        // Update existing account to become a KOL
+        existingAccount.userNameOnX = username;
+        existingAccount.displayName = name;
+        existingAccount.avatarUrl = avatarUrl;
+        existingAccount.pricePerSlot = pricePerSlot;
+        existingAccount.expertise = JSON.stringify(expertise);
+        existingAccount.description = description;
+        existingAccount.availableSlots = availableSlots;
+        existingAccount.reputation = 100; // Starting reputation for KOL
+        existingAccount.level = 'Bronze'; // Starting level
+        existingAccount.completedSessions = 0;
+        existingAccount.rating = 0;
+        existingAccount.tags = JSON.stringify(expertise.slice(0, 3)); // Use first 3 expertise as tags
+        existingAccount.bookedSlots = 0;
+        existingAccount.isAvailable = true; // Now available as KOL
+        
+        savedAccount = await accountRepository.save(existingAccount);
+      } else {
+        // Create new account (fallback case)
+        const account = accountRepository.create({
+          walletAddress,
+          userNameOnX: username,
+          displayName: name,
+          avatarUrl,
+          pricePerSlot,
+          expertise: JSON.stringify(expertise),
+          description,
+          availableSlots,
+          reputation: 100, // Starting reputation
+          level: 'Bronze', // Starting level
+          completedSessions: 0,
+          rating: 0,
+          tags: JSON.stringify(expertise.slice(0, 3)), // Use first 3 expertise as tags
+          bookedSlots: 0,
+          isAvailable: true,
+          // Set default values for required fields
+          minBookingDuration: 30,
+          maxBookingDuration: 240,
+          availabilitySchedule: ''
+        });
 
-      // Create initial social stats
+        savedAccount = await accountRepository.save(account);
+      }
+
+      // Create or update social stats
       const socialStatRepository = AppDataSource.getRepository(SocialStat);
-      const socialStat = socialStatRepository.create({
-        accountId: savedAccount.id,
-        follower: 0,
-        totalPost: 0,
-        totalLike: 0
+      let socialStat = await socialStatRepository.findOne({
+        where: { accountId: savedAccount.id }
       });
-      await socialStatRepository.save(socialStat);
+      
+      if (!socialStat) {
+        // Create new social stats if none exist
+        socialStat = socialStatRepository.create({
+          accountId: savedAccount.id,
+          follower: 0,
+          totalPost: 0,
+          totalLike: 0
+        });
+        await socialStatRepository.save(socialStat);
+      }
+      // If social stats already exist, keep the existing data
 
       // Format response to match frontend expectations
       const kolData = {
@@ -219,7 +246,7 @@ export class KOLController {
 
       reply.status(201).send({
         success: true,
-        message: 'KOL created successfully',
+        message: existingAccount ? 'Account updated to KOL successfully' : 'KOL created successfully',
         data: kolData
       });
 

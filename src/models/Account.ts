@@ -64,8 +64,6 @@ export class Account extends BaseTimestamp {
   @Column({ name: 'max_booking_duration', default: 240 })
   maxBookingDuration: number; // minutes
 
-  @Column('decimal', { precision: 10, scale: 2, name: 'hourly_rate', nullable: true })
-  hourlyRate: number;
 
   @OneToOne(() => SocialStat, socialStat => socialStat.account)
   socialStat: SocialStat;
