@@ -96,21 +96,36 @@ npm test
 npm run deploy:testnet
 ```
 
-## 📊 Contract Addresses
+## 📊 Deployed Contract Addresses
 
-After deployment, you'll get:
-- **TimeBooking Contract**: `0x...` (Main booking logic)
-- **BookingTicketNFT Helper**: `0x...` (Metadata utilities)
+### Somnia Testnet (Chain ID: 50312)
+
+| Contract | Address | Purpose | 
+|----------|---------|---------|
+| **TimeBooking** | `0x6800a3bc30B5B29036B1776d325cCC25855a15E5` | Main booking logic & NFT minting |
+| **BookingTicketNFT** | `0x313bB71ff6eB838365423A83c41ccb3b93a78790` | NFT ticket metadata utilities |
+| **ReputationNFT** | `0xE7df053ee7EC4123C810187514Fa0Bf3a226752B` | KOL reputation verification |
+| **ReputationTracker** | `0xEbA56A30462CD10aC4b7b0da4f8bda33fa` | On-chain reputation scoring |
+
+### Contract Details
+- **Deployer Address**: `0x914Fe80664B0404ce642A3d717290E47a41E90f6`
+- **Fee Recipient**: `0x914Fe80664B0404ce642A3d717290E47a41E90f6`
+- **Platform Fee**: 2.5% (250 basis points)
+- **Deployment Date**: September 7, 2025
+- **Contract Name**: "SoRe Booking Tickets"
+- **Contract Symbol**: "SREBT"
 
 ## 💻 Frontend Integration
 
 ### Environment Variables
 Add these to your React app `.env`:
 ```bash
-REACT_APP_TIME_BOOKING_CONTRACT_ADDRESS=0x...
-REACT_APP_BOOKING_TICKET_NFT_CONTRACT_ADDRESS=0x...
-REACT_APP_SOMNIA_RPC_URL=https://testnet.somnia.network
-REACT_APP_CHAIN_ID=50312
+VITE_TIME_BOOKING_CONTRACT_ADDRESS=0x6800a3bc30B5B29036B1776d325cCC25855a15E5
+VITE_BOOKING_TICKET_NFT_CONTRACT_ADDRESS=0x313bB71ff6eB838365423A83c41ccb3b93a78790
+VITE_REPUTATION_NFT_CONTRACT_ADDRESS=0xE7df053ee7EC4123C810187514Fa0Bf3a226752B
+VITE_REPUTATION_TRACKER_CONTRACT_ADDRESS=0xEbA56A30462CD10aC4b7b0da4f8bda33fa
+VITE_SOMNIA_RPC_URL=https://dream-rpc.somnia.network
+VITE_CHAIN_ID=50312
 ```
 
 ### Contract Interaction Examples
@@ -216,10 +231,34 @@ Key events emitted:
 ## 🌐 Network Details
 
 **Somnia Testnet**
-- Chain ID: `50311`
-- RPC URL: `https://testnet.somnia.network`
+- Chain ID: `50312`
+- RPC URL: `https://dream-rpc.somnia.network`
 - Block Explorer: `https://explorer.somnia.network`
 - Faucet: `https://faucet.somnia.network`
+
+### Network Configuration for MetaMask
+```json
+{
+  "chainName": "Somnia Testnet",
+  "chainId": "0xC488",
+  "nativeCurrency": {
+    "name": "Somnia Token",
+    "symbol": "STT",
+    "decimals": 18
+  },
+  "rpcUrls": ["https://dream-rpc.somnia.network"],
+  "blockExplorerUrls": ["https://explorer.somnia.network"]
+}
+```
+
+### Contract Verification & Explorer Links
+
+All contracts are deployed and can be viewed on the Somnia block explorer:
+
+- **TimeBooking Contract**: [View on Explorer](https://explorer.somnia.network/address/0x6800a3bc30B5B29036B1776d325cCC25855a15E5)
+- **BookingTicketNFT Contract**: [View on Explorer](https://explorer.somnia.network/address/0x313bB71ff6eB838365423A83c41ccb3b93a78790)
+- **ReputationNFT Contract**: [View on Explorer](https://explorer.somnia.network/address/0xE7df053ee7EC4123C810187514Fa0Bf3a226752B)
+- **ReputationTracker Contract**: [View on Explorer](https://explorer.somnia.network/address/0xEbA56A30462CD10aC4b7b0da4f8bda33fa)
 
 ## 🎯 Roadmap
 
